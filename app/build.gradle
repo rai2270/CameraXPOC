@@ -8,7 +8,7 @@ android {
     compileSdkVersion 28
     buildToolsVersion "29.0.0"
     defaultConfig {
-        applicationId "com.tr.androidcamerax"
+        applicationId "com.tr.camerax"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1

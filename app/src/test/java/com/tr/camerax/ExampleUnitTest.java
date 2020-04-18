@@ -1,4 +1,4 @@
-package com.tr.androidcamerax;
+package com.tr.camerax;
 
 import org.junit.Test;
 
