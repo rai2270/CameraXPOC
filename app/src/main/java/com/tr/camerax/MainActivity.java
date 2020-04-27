@@ -78,8 +78,6 @@ public class MainActivity extends AppCompatActivity {
                 .setTargetRotation(previewView.getDisplay().getRotation())
                 .build();
 
-        imagePreview.setSurfaceProvider(previewView.getPreviewSurfaceProvider());
-
         imageCapture = new ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
@@ -112,8 +110,8 @@ public class MainActivity extends AppCompatActivity {
                     );
                     cameraControl = camera.getCameraControl();
                     cameraInfo = camera.getCameraInfo();
-//                setTorchStateObserver()
-//                setZoomStateObserver()
+                    previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
+                    imagePreview.setSurfaceProvider(previewView.createSurfaceProvider(camera.getCameraInfo()));
                 } catch (Exception e) {
                 }
             }
