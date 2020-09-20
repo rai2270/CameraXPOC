@@ -25,4 +25,34 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <ImageButton
+        android:id="@+id/vidCaptureBind"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_margin="24dp"
+        app:srcCompat="@android:drawable/ic_menu_call"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/vidCaptureStart"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/vidCaptureStart"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_margin="24dp"
+        app:srcCompat="@android:drawable/ic_menu_call"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/vidCaptureStop"
+        app:layout_constraintStart_toEndOf="@id/vidCaptureBind" />
+
+    <ImageButton
+        android:id="@+id/vidCaptureStop"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_margin="24dp"
+        app:srcCompat="@android:drawable/ic_menu_call"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/vidCaptureStart" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

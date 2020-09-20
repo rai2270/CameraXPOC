@@ -1,6 +1,7 @@
 package com.tr.camerax;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
@@ -47,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
     private CameraInfo cameraInfo;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private boolean isRecording = false;
+    private boolean videoBindComplete = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (allPermissionsGranted()) {
             previewView.post(() -> {
-                startCamera();
+                bindCamera();
             });
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
@@ -70,32 +74,65 @@ public class MainActivity extends AppCompatActivity {
                 takePicture();
             }
         });
+
+        findViewById(R.id.vidCaptureBind).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (videoCapture == null) {
+                    videoBindComplete = false;
+                    bindVideo();
+                }
+            }
+        });
+
+        findViewById(R.id.vidCaptureStart).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (videoBindComplete && videoCapture != null) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (Exception e) {
+                    }
+                    startRecording();
+                }
+            }
+        });
+
+        findViewById(R.id.vidCaptureStop).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (videoBindComplete && videoCapture != null) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (Exception e) {
+                    }
+                    videoCapture.stopRecording();
+                }
+            }
+        });
     }
 
-    private void startCamera() {
-        imagePreview = new Preview.Builder()
-                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
-                .setTargetRotation(previewView.getDisplay().getRotation())
-                .build();
-
-        imageCapture = new ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
-                .build();
-
-        videoCapture = new VideoCaptureConfig.Builder()
-                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
-                .build();
-
-        CameraSelector cameraSelector =
-                new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build();
-
+    private void bindCamera() {
         cameraProviderFuture.addListener(new Runnable() {
             @Override
             public void run() {
                 try {
+                    imagePreview = new Preview.Builder()
+                            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                            .setTargetRotation(previewView.getDisplay().getRotation())
+                            .build();
+                    imagePreview.setSurfaceProvider(previewView.createSurfaceProvider());
+
+                    imageCapture = new ImageCapture.Builder()
+                            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                            .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                            .build();
+
+                    CameraSelector cameraSelector =
+                            new CameraSelector.Builder()
+                                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                                    .build();
+
                     ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
                     // Must unbind the use-cases before rebinding them
                     cameraProvider.unbindAll();
@@ -104,14 +141,12 @@ public class MainActivity extends AppCompatActivity {
                             (LifecycleOwner) MainActivity.this,
                             cameraSelector,
                             imagePreview,
-                            // imageAnalysis,
-                            imageCapture,
-                            videoCapture
+                            imageCapture
                     );
                     cameraControl = camera.getCameraControl();
                     cameraInfo = camera.getCameraInfo();
-                    previewView.setPreferredImplementationMode(PreviewView.ImplementationMode.TEXTURE_VIEW);
-                    imagePreview.setSurfaceProvider(previewView.createSurfaceProvider(camera.getCameraInfo()));
+//                setTorchStateObserver()
+//                setZoomStateObserver()
                 } catch (Exception e) {
                 }
             }
@@ -140,11 +175,81 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void bindVideo() {
+        cameraProviderFuture.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    imagePreview = new Preview.Builder()
+                            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                            .setTargetRotation(previewView.getDisplay().getRotation())
+                            .build();
+                    imagePreview.setSurfaceProvider(previewView.createSurfaceProvider());
+
+                    videoCapture = new VideoCapture.Builder()
+                            //.setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                            .build();
+
+                    CameraSelector cameraSelector =
+                            new CameraSelector.Builder()
+                                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                                    .build();
+
+                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                    // Must unbind the use-cases before rebinding them
+                    cameraProvider.unbindAll();
+
+                    Camera camera = cameraProvider.bindToLifecycle(
+                            (LifecycleOwner) MainActivity.this,
+                            cameraSelector,
+                            imagePreview,
+                            videoCapture
+                    );
+                    cameraControl = camera.getCameraControl();
+                    cameraInfo = camera.getCameraInfo();
+                } catch (Exception e) {
+                }
+
+                previewView.post(() -> {
+                    Toast.makeText(getBaseContext(), "Video Bind Complete", Toast.LENGTH_SHORT).show();
+                });
+
+                videoBindComplete = true;
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void startRecording() {
+        File file = new File(Environment.getExternalStorageDirectory() + "/" + System.currentTimeMillis() + ".mp4");
+        VideoCapture.OutputFileOptions outputFileOptions = new VideoCapture.OutputFileOptions.Builder(file).build();
+        if (videoCapture != null) {
+            previewView.post(() -> {
+                Toast.makeText(getBaseContext(), "Video Start", Toast.LENGTH_SHORT).show();
+            });
+            videoCapture.startRecording(outputFileOptions, executor, new VideoCapture.OnVideoSavedCallback() {
+                @Override
+                public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
+                    String msg = "Video captured at " + file.getAbsolutePath();
+                    previewView.post(() -> {
+                        Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
+                    });
+
+                    isRecording = false;
+                }
+
+                @Override
+                public void onError(int videoCaptureError, @NonNull String message, @Nullable Throwable cause) {
+                    isRecording = false;
+                }
+            });
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
-                startCamera();
+                bindCamera();
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
                 finish();
